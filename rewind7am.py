@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys
 import datetime
 import time
@@ -10,20 +11,23 @@ def rewindTime(t):
   night session will count towards previous day activity
   """
   d = datetime.datetime.fromtimestamp(t)
+  # reset < hour settings
+  d = d.replace(microsecond=0, second=0, minute=0)
   if d.hour >= 7:
     # it's between 7am-11:59pm
-    d = datetime.datetime(d.year, d.month, d.day, 7) # rewind time to 7am
+    d = d.replace(hour=7) # rewind time to 7am
   else:
     # it's between 12am-7am, so this event still belongs to previous day
-    d = datetime.datetime(d.year, d.month, d.day, 7) # rewind time to 7am
+    d = d.replace(hour=7) # rewind time to 7am
     d -= datetime.timedelta(days=1) # subtract a day
 
-  curtime = int(d.strftime("%s"))
+  curtime = d.timestamp()
   return curtime
 
 if __name__ == '__main__':
+  # the output is int since by definition no microseconds are left, but we take full timestamps as floats if wanted
   if len(sys.argv) <= 1:
     # use right now
-    print rewindTime(int(time.time()))
+    print(int(rewindTime(float(time.time()))))
   else:
-    print rewindTime(int(sys.argv[1]))
+    print(int(rewindTime(float(sys.argv[1]))))

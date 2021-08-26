@@ -1,8 +1,9 @@
-import SocketServer
-import SimpleHTTPServer
+import socketserver
+import http.server
 import sys
 import cgi
 import os
+import subprocess
 
 from export_events import updateEvents
 from rewind7am import rewindTime
@@ -19,10 +20,10 @@ rootdir = os.getcwd()
 os.chdir('render')
 
 # Custom handler
-class CustomHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class CustomHandler(http.server.SimpleHTTPRequestHandler):
   def do_GET(self):
     # default behavior
-    SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self) 
+    http.server.SimpleHTTPRequestHandler.do_GET(self)
 
   def do_POST(self):
     form = cgi.FieldStorage(
@@ -45,7 +46,7 @@ class CustomHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
       note = form.getvalue('note')
       note_time = form.getvalue('time')
       os.chdir(rootdir) # pop out
-      os.system('echo %s | ./note.sh %s' % (note, note_time))
+      subprocess.check_output(['./note.sh', str(note_time)], input=note.encode())
       updateEvents() # defined in export_events.py
       os.chdir('render') # go back to render
       result = 'OK'
@@ -57,7 +58,8 @@ class CustomHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
       post_time = int(form.getvalue('time'))
       os.chdir(rootdir) # pop out
       trev = rewindTime(post_time)
-      open('logs/blog_%d.txt' % (post_time, ), 'w').write(post)
+      with open(f'logs/blog_{post_time:d}.txt', 'w') as f:
+        f.write(post)
       updateEvents() # defined in export_events.py
       os.chdir('render') # go back to render
       result = 'OK'
@@ -65,10 +67,13 @@ class CustomHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     self.send_response(200)
     self.send_header('Content-type','text/html')
     self.end_headers()
-    self.wfile.write(result)
+    self.wfile.write(result.encode())
 
-httpd = SocketServer.ThreadingTCPServer((IP, PORT), CustomHandler)
+class BetterThreadingTCPServer(socketserver.ThreadingTCPServer):
+  allow_reuse_address = True
 
-print 'Serving ulogme, see it on http://localhost:' + `PORT`
+httpd = BetterThreadingTCPServer((IP, PORT), CustomHandler)
+
+print(f'Serving ulogme, see it on http://localhost:{PORT}')
 httpd.serve_forever()
 
