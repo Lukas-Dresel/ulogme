@@ -42,7 +42,7 @@ def write_events(interval_start, events):
   
   with codes_file.open('a') as f:
     for ts, ev in events:
-      f.write(f'{int(ts)} {ev!r}\n')
+      f.write(f'{int(ts)} {ev}\n')
 
 def take_while(ls, pred):
   assert type(ls) is list
