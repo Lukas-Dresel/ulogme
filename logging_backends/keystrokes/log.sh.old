@@ -22,9 +22,14 @@ do
   
   # count number of key release events
   num=$(cat $helperfile | grep release | wc -l)
+  timestamp=$(python rewind7am.py)
+  date +%s >> "logs/keycodes_${timestamp}.txt"
+  if grep -P 'keycode\s+\d+\s+(release|press)' "$helperfile" 1>/dev/null 2>/dev/null; then
+    grep -P 'keycode\s+\d+\s+(release|press)' "$helperfile" | sed 's/keycode\s*([0-9]+'>> "logs/keycodes_${timestamp}.txt"
+  fi
   
   # append unix time stamp and the number into file
-  logfile="logs/keyfreq_$(python rewind7am.py).txt"
+  logfile="logs/keyfreq_${timestamp}.txt"
   echo "$(date +%s) $num"  >> $logfile
   echo "logged key frequency: $(date) $num release events detected into $logfile"
   

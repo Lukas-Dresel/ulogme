@@ -1,0 +1,13 @@
+
+[Unit]
+Description=ulogme - log your activity
+
+[Service]
+Restart=always
+RestartSec=10s
+
+ExecStart={{command}}
+WorkingDirectory={{playbook_dir | dirname}}
+
+[Install]
+WantedBy=default.target

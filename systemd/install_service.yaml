@@ -1,0 +1,49 @@
+---
+- hosts: localhost
+  vars:
+    services:
+        - { name: 'logging_keystrokes', command: "{{playbook_dir | dirname}}/logging_backends/keystrokes/log.sh" }
+        - { name: 'logging_mouse', command: "{{playbook_dir | dirname}}/logging_backends/mouse/log.sh" }
+        - { name: 'logging_window', command: "{{playbook_dir | dirname}}/logging_backends/active_window/log.sh" }
+        - { name: 'logging_screenshots', command: "{{playbook_dir | dirname}}/logging_backends/screenshots/log.sh" }
+        - { name: 'server', command: "/home/{{ansible_user_id}}/.virtualenvs/ulogme/bin/python -u ./ulogme_serve.py" }
+        
+  tasks:
+    - name: ensure systemd-user directory exists
+      file: 
+        path: ~/.config/systemd/user/
+        state: directory
+        mode: '0755'
+
+    - name: install services
+      template:
+        src: ./ulogme.service.j2
+        dest: "~/.config/systemd/user/ulogme_{{ item.name }}.service"
+      vars:
+        command: "{{item.command}}"
+      loop: "{{ services }}"
+        
+    - name: start service
+      systemd:
+        name: "ulogme_{{item.name}}"
+        state: restarted
+        daemon_reload: yes
+        enabled: yes
+        scope: user
+      loop: "{{services}}"
+
+
+    # - name: install logging system-systemd config
+    #   template:
+    #     src: ./ulogme.service.j2
+    #     dest: /etc/systemd/system/ulogme_logging_root.service
+    #   vars:
+    #     command: "{{playbook_dir | dirname}}/start_logging_root.sh"
+    #   become: yes
+    # - name: start service
+    #   systemd:
+    #     name: ulogme_logging_root
+    #     state: restarted
+    #     daemon_reload: yes
+    #     enabled: yes
+    #   become: yes
