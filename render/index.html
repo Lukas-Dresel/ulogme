@@ -21,8 +21,8 @@
 
     // GLOBALS
     var color_hash = {}; // mapped titles -> hsl color to draw with
-    var t00; // initial time for a day (time first event began)
-    var ft; // final time for a day (time last event ended)
+    var start_time; // initial time for a day (time first event began)
+    var final_time; // final time for a day (time last event ended)
     var ecounts = {};
     var etypes = [];
     var hacking_stats = {};
@@ -78,17 +78,19 @@
       .attr("width", W)
       .attr("height", 30);
 
-      var sx = (ft-t00) / W;
+      var sx = (final_time-start_time) / W;
       var g = svg.selectAll(".h")
         .data(hacking_stats.events)
         .enter().append("g")
         .attr("class", "h")
-        .on("mouseover", function(d){return tooltip.style("visibility", "visible").text(strTimeDelta(d.dt));})
+        .on("mouseover", function(event, data) {
+          return tooltip.style("visibility", "visible").text(strTimeDelta(data.dt));
+        })
         .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
         .on("mouseout", function(){return tooltip.style("visibility", "hidden");});
 
       g.append("rect")
-        .attr("x", function(d) { return (d.t0-t00)/sx; } )
+        .attr("x", function(d) { return (d.t0-start_time)/sx; } )
         .attr("width", function(d) { return d.dt/sx; } )
         .attr("y", function(d) {return 30-10*d.intensity} )
         .attr("height", function(d) {return 10*d.intensity; })
@@ -126,27 +128,36 @@
     }
 
     // simple plot of key frequencies over time
-    function visualizeKeyFreq(es) {
-      $("#keygraph").empty();
+    function visualizeFreq(node_selector, es, label, max_y) {
+      $(node_selector).empty();
 
       var W = $(window).width() - 40;
 
-      var div = d3.select("#keygraph").append("div");
+      var div = d3.select(node_selector).append("div");
       var svg = div.append("svg")
       .attr("width", "100%")
       .attr("height", 100);
+      
+      var max_t = d3.max(es, d => d.t)
+      var max_s = d3.max(es, d => d.s)
+      var x = d3.scaleLinear()
+        .domain( [ start_time, max_t ] )
+        .range( [ 0, W ] );
+      var y = d3.scaleLinear()
+        .domain( [ 0, max_y ] )
+        .range( [ 100, 0 ]);
 
-      var sx = (ft-t00) / W;
-      var line = d3.svg.line()
-        .x(function(d) { return (d.t -t00) / sx; })
-        .y(function(d) { return 100 - d.s; });
+      var sx = (final_time-start_time) / W;
+      var line = d3.line()
+        .x(d => x(d.t))
+        .y(d => y(d.s));
 
       svg.append("path")
         .datum(es)
         .attr("class", "line")
         .attr("d", line);
 
-      div.append("p").attr("class", "al").text("keystroke frequency");
+      div.append("p").attr("class", "al").text(label);
     }
 
     function visualizeNotes(es) {
@@ -160,14 +171,16 @@
       for(var i=0,N=es.length;i<N;i++) {
         var e = es[i];
         var d = {};
-        d.x = e.t-t00;
+        d.x = e.t-start_time;
         d.s = e.s;
-        if(e.s.indexOf("coffee")>-1) {
+        if(e.s.indexOf("coffee")>-1 || e.s.indexOf("black tea") > -1) {
           // we had coffee
-          coffees.push(e.t-t00);
+          coffees.push(e.t-start_time);
+          // console.log("Coffee: " + JSON.stringify(e))
         }
         dts.push(d);
       }
+      // console.log(coffees);
 
       console.log('drawing ' + dts.length + ' notes.');
       var div = d3.select("#notesvis").append("div");
@@ -177,7 +190,7 @@
       .attr("width", W)
       .attr("height", 70);
 
-      var sx = (ft-t00) / W;
+      var sx = (final_time-start_time) / W;
 
       // Draw coffee. Overlay
       // draw_coffee is set in render_settings.js
@@ -186,7 +199,7 @@
         var nc = coffees.length;
         var alpha = Math.log(2)/20520; // 20,520 is half life of coffee, in seconds. Roughly 6 hours
         for(var i=0;i<100;i++) {
-          there = i*(ft-t00)/100.0;
+          there = i*(final_time-start_time)/100.0;
           // coffee is assumed to add linearly in the body
           var amount = 0;
           for(var j=0;j<nc;j++) {
@@ -196,7 +209,7 @@
           }
           coffex.push({t:there, a:30*amount}); // scale is roughly 30px = 150mg coffee, for now
         }
-        var cdx = (ft - t00)/100.0;
+        var cdx = (final_time - start_time)/100.0;
         var g = svg.selectAll(".c")
           .data(coffex)
           .enter()
@@ -248,7 +261,7 @@
         ttoti[fix] += e.dt;
         if(e.dt < 10) continue; // less than few second event? skip drawing. Not a concentrated activity
         var d = {};
-        d.x = e.t - t00;
+        d.x = e.t - start_time;
         d.w = e.dt;
         d.s = e.s + " (" + strTimeDelta(e.dt) + ")";
         d.fix = fix;
@@ -276,19 +289,19 @@
       .attr("width", W)
       .attr("height", 70);
 
-      var sx = (ft-t00) / W;
+      var sx = (final_time-start_time) / W;
       var g = svg.selectAll(".e")
         .data(dts)
         .enter().append("g")
         .attr("class", "e")
-        .on("mouseover", function(d){return tooltip.style("visibility", "visible").text(d.s);})
+        .on("mouseover", function(ev, d){return tooltip.style("visibility", "visible").text(d.s);})
         .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
         .on("mouseout", function(){return tooltip.style("visibility", "hidden");})
-        .on("click", function(d){ 
+        .on("click", function(ev, d){ 
           $("#notesinfo").show(); 
           $("#notesmsg").html("clicked event <b>" + d.s + "</b><br> Add note at time of this event:");
           $("#notetext").focus()
-          clicktime = d.x+t00;
+          clicktime = d.x+start_time;
           return 0; 
           });
 
@@ -300,14 +313,14 @@
         .attr("fill", function(d) { return filter_colors[d.fix]; });
 
       // produce little axis numbers along the timeline
-      var d0 = new Date(t00 * 1000);
+      var d0 = new Date(start_time * 1000);
       d0.setMinutes(0);
       d0.setSeconds(0);
       d0.setMilliseconds(0);
       var t = d0.getTime() / 1000; // cropped hour
-      while(t < ft) {
+      while(t < final_time) {
         svg.append("text")
-          .attr("transform", "translate(" + [(t-t00)/sx, 70] + ")")
+          .attr("transform", "translate(" + [(t-start_time)/sx, 70] + ")")
           .attr("font-family", "'Lato', sans-serif")
           .attr("font-size", 14)
           .attr("fill", "#CCC")
@@ -339,8 +352,8 @@
     }
 
     function writeHeader() {
-      var date0 = new Date(t00*1000);
-      var date1 = new Date(ft*1000);
+      var date0 = new Date(start_time*1000);
+      var date1 = new Date(final_time*1000);
       $("#header").html('<h2>' + ppDate(date0) + ' - ' + ppDate(date1) + '</h2>');
     }
 
@@ -366,6 +379,7 @@
         // save these as globals for later access
         events = data['window_events'];
         key_events = data['keyfreq_events']
+        mouse_events = data['mousefreq_events']
         notes_events = data['notes_events']
 
         // map all window titles through the (customizable) mapwin function
@@ -379,11 +393,11 @@
 
         // find the time extent: min and max time for this day
         if(events.length > 0) {
-          t00 = _.min(_.pluck(events, 't'));
-          ft = _.max(_.map(events, function(e) { return e.t + e.dt; }))
+          start_time = _.min(_.pluck(events, 't'));
+          final_time = _.max(_.map(events, function(e) { return e.t + e.dt; }))
         } else {
-          t00 = daylog.t0;
-          ft = daylog.t1;
+          start_time = daylog.t0;
+          final_time = daylog.t1;
         }
 
         // render blog entry
@@ -394,18 +408,21 @@
         visualizeEvents(events);
         writeHeader();
         createPieChart(events, etypes);
-        computeKeyStats(events, key_events);
+        // computeKeyStats(events, key_events);
         hacking_stats = computeHackingStats(events, key_events, hacking_titles);
         visualizeHackingTimes(hacking_stats);
         key_stats = computeKeyStats(events, key_events);
         visualizeKeyStats(key_stats, etypes);
-        visualizeKeyFreq(key_events);
+        visualizeFreq("#keygraph", key_events, "keystroke frequency", 100);
+        visualizeFreq("#mousegraph", mouse_events, "mouse frequency", 1000);
+        // visualizeMouseFreq(mouse_events);
         visualizeNotes(notes_events);
       });
     }
 
     var events;
     var key_events;
+    var mouse_events;
     var notes_events;
     var blog;
     var tooltip;
@@ -537,7 +554,8 @@
       if(!dirty) return;
       if(!loaded) return;
       visualizeEvents(events);
-      visualizeKeyFreq(key_events);
+      visualizeFreq("#keygraph", key_events, "keystroke frequency", 100);
+      visualizeFreq("#mousegraph", mouse_events, "mouse frequency", 1000);
       visualizeNotes(notes_events);
       visualizeHackingTimes(hacking_stats);
       dirty = false;
@@ -570,6 +588,7 @@
       </div>
       <div id="keystats"></div>
       <div id="keygraph"></div>
+      <div id="mousegraph"></div>
       <div id="notesinfo">
         <div id="notesinfohide">X</div>
         <div>
