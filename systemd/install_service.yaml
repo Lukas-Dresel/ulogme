@@ -2,11 +2,11 @@
 - hosts: localhost
   vars:
     services:
-        - { name: 'logging_keystrokes', command: "{{playbook_dir | dirname}}/logging_backends/keystrokes/log.sh" }
-        - { name: 'logging_mouse', command: "{{playbook_dir | dirname}}/logging_backends/mouse/log.sh" }
-        - { name: 'logging_window', command: "{{playbook_dir | dirname}}/logging_backends/active_window/log.sh" }
-        - { name: 'logging_screenshots', command: "{{playbook_dir | dirname}}/logging_backends/screenshots/log.sh" }
-        - { name: 'server', command: "/home/{{ansible_user_id}}/.virtualenvs/ulogme/bin/python -u ./ulogme_serve.py" }
+        - { enabled: true, name: 'logging_keystrokes', command: "{{playbook_dir | dirname}}/logging_backends/keystrokes/log.sh" }
+        - { enabled: true, name: 'logging_mouse', command: "{{playbook_dir | dirname}}/logging_backends/mouse/log.sh" }
+        - { enabled: true, name: 'logging_window', command: "{{playbook_dir | dirname}}/logging_backends/active_window/log.sh" }
+        - { enabled: false, name: 'logging_screenshots', command: "{{playbook_dir | dirname}}/logging_backends/screenshots/log.sh" }
+        - { enabled: true, name: 'server', command: "/home/{{ansible_user_id}}/.virtualenvs/ulogme/bin/python -u ./ulogme_serve.py" }
         
   tasks:
     - name: ensure systemd-user directory exists
@@ -28,7 +28,7 @@
         name: "ulogme_{{item.name}}"
         state: restarted
         daemon_reload: yes
-        enabled: yes
+        enabled: "{{item.enabled}}"
         scope: user
       loop: "{{services}}"
 
