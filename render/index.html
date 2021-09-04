@@ -160,6 +160,79 @@
       div.append("p").attr("class", "al").text(label);
     }
 
+    // plot of repo modifications over time
+    function visualizeRepoChanges(events) {
+      events = events.map(function parse_repo_event (e) {
+        var spl = e.s.split(' ')
+        return {
+          t: e.t, 
+          name: spl[0], 
+          files_changed: +spl[1],
+          insertions: +spl[2],
+          deletions: +spl[3],
+        }
+      })
+
+      $("#repovis").empty();
+      if (!events) {
+        return;
+      }
+      var by_repo = new Map();
+      for (key of new Set(events.map(e=>e.name))) {
+        by_repo.set(key, []);
+      }
+      console.log(events);
+      
+      for (var e of events) {
+        var {name, ...stats} = e;
+        by_repo.get(name).push(stats);
+      }
+      var W = $(window).width() - 40;
+
+      by_repo.forEach(function (stats, repo_name, map) {
+        if (repo_name == "pwnrex-paper") {
+          return;
+        }
+        console.log(stats)
+        var div = d3.select("#repovis").append("div");
+        var svg = div.append("svg")
+        .attr("width", "100%")
+        .attr("height", 100);
+        
+        var max_t = d3.max(stats, d => d.t)
+        var max_cnt = d3.max(stats, d => Math.max(d.insertions, d.deletions))
+
+        var x = d3.scaleLinear()
+          .domain( [ start_time, max_t ] )
+          .range( [ 0, W ] );
+        var y = d3.scaleLinear()
+          .domain( [ 0, max_cnt ] )
+          .range( [ 100, 0 ]);
+
+        var line_insert = d3.line()
+          .curve(d3.curveBasis)
+          .x(d => x(d.t))
+          .y(d => y(d.insertions));
+        var line_delete = d3.line()
+          .curve(d3.curveBasis)
+          .x(d => x(d.t))
+          .y(d => y(d.deletions));
+
+        svg.append("path")
+          .datum(stats)
+          .attr("class", "line")
+          .attr("d", line_insert)
+          .style("stroke", "green");
+        svg.append("path")
+          .datum(stats)
+          .attr("class", "line")
+          .attr("d", line_delete)
+          .style("stroke", "red");
+          
+        div.append("p").attr("class", "al").text(repo_name);
+      })
+    }
+
     function visualizeNotes(es) {
       console.log('number of notes:' + es.length);
       $("#notesvis").empty();
@@ -390,9 +463,10 @@
 
         // save these as globals for later access
         events = data['window_events'];
-        key_events = data['keyfreq_events']
-        mouse_events = data['mousefreq_events']
-        notes_events = data['notes_events']
+        key_events = data['keyfreq_events'];
+        mouse_events = data['mousefreq_events'];
+        notes_events = data['notes_events'];
+        repo_events = data['repo_events'];
 
         // map all window titles through the (customizable) mapwin function
         _.each(events, function(e) { e.m = mapwin(e.s); });
@@ -427,7 +501,7 @@
         visualizeKeyStats(key_stats, etypes);
         visualizeFreq("#keygraph", key_events, "keystroke frequency", 100);
         visualizeFreq("#mousegraph", mouse_events, "mouse frequency", 1000);
-        // visualizeMouseFreq(mouse_events);
+        visualizeRepoChanges(repo_events);
         visualizeNotes(notes_events);
       });
     }
@@ -436,6 +510,7 @@
     var key_events;
     var mouse_events;
     var notes_events;
+    var repo_events;
     var blog;
     var tooltip;
     var event_list = [];
@@ -568,6 +643,7 @@
       visualizeEvents(events);
       visualizeFreq("#keygraph", key_events, "keystroke frequency", 100);
       visualizeFreq("#mousegraph", mouse_events, "mouse frequency", 1000);
+      visualizeRepoChanges(repo_events);
       visualizeNotes(notes_events);
       visualizeHackingTimes(hacking_stats);
       dirty = false;
@@ -598,7 +674,9 @@
           <button id="blogentersubmit">Submit</button>
         </div>
       </div>
+
       <div id="keystats"></div>
+      <div id="repovis"></div>
       <div id="keygraph"></div>
       <div id="mousegraph"></div>
       <div id="notesinfo">

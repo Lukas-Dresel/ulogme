@@ -50,6 +50,7 @@ def updateEvents():
   L.extend(glob.glob("logs/mousefreq_*.txt"))
   L.extend(glob.glob("logs/window_*.txt"))
   L.extend(glob.glob("logs/notes_*.txt"))
+  L.extend(glob.glob("logs/repo_changes_*.txt"))
 
   # extract all times. all log files of form {type}_{stamp}.txt
   ts = [int(x[x.rfind('_')+1:x.rfind('.txt')]) for x in L]
@@ -72,11 +73,14 @@ def updateEvents():
     out_list.append({'t0':t0, 't1':t1, 'fname': fout})
 
     fwrite = os.path.join(RENDER_ROOT, fout)
-    e1f = 'logs/window_%d.txt' % (t0, )
-    e2f = 'logs/keyfreq_%d.txt' % (t0, )
-    e3f = 'logs/mousefreq_%d.txt' % (t0, )
-    e4f = 'logs/notes_%d.txt' % (t0, )
-    e5f = 'logs/blog_%d.txt' % (t0, )
+    e1f = f'logs/window_{t0}.txt'
+    e2f = f'logs/keyfreq_{t0}.txt'
+    e3f = f'logs/mousefreq_{t0}.txt'
+    e4f = f'logs/notes_{t0}.txt'
+    e5f = f'logs/repo_changes_{t0}.txt'
+
+    blog_path = f'logs/blog_{t0}.txt'
+    
 
     dowrite = False
 
@@ -97,13 +101,14 @@ def updateEvents():
       e2 = loadEvents(e2f)
       e3 = loadEvents(e3f)
       e4 = loadEvents(e4f)
+      e5 = loadEvents(e5f)
       for k in e2: k['s'] = int(k['s']) # int convert
 
-      e5 = ''
-      if os.path.isfile(e5f):
-        e5 = open(e5f, 'r').read()
+      blog = ''
+      if os.path.isfile(blog_path):
+        blog = open(blog_path, 'r').read()
 
-      eout = {'window_events': e1, 'keyfreq_events': e2, 'mousefreq_events': e3, 'notes_events': e4, 'blog': e5}
+      eout = {'window_events': e1, 'keyfreq_events': e2, 'mousefreq_events': e3, 'notes_events': e4, 'repo_events': e5, 'blog': blog}
       with open(fwrite, 'w') as f:
           json.dump(eout, f)
       print('wrote ' + fwrite)
