@@ -15,10 +15,11 @@ import random
 import subprocess
 import sys
 
-class MyException(Exception): pass
-
 cwd = pathlib.Path(os.getcwd()).absolute().resolve()
 assert (cwd / "rewind7am.py").is_file(), "All logging scripts have to be run in the main directory"
+
+def rewind(t):
+  return int(subprocess.check_output([str(cwd / "rewind7am.py"), str(t)]))
 
 logs_dir = cwd / "logs"
 
@@ -26,8 +27,6 @@ key_events = queue.Queue()
 
 INTERVAL = 9
 
-def rewind(t):
-  return int(subprocess.check_output([str(cwd / "rewind7am.py"), str(t)]))
 
 def write_events(interval_start, events):
   t = rewind(interval_start)

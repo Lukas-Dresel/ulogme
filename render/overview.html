@@ -259,7 +259,7 @@
       var svg = div.append("svg")
         .attr("width", W)
         .attr("height", H*2);
-      var line = d3.svg.line()
+      var line = d3.line()
         .x(function(d,i) { return (W - 2*wmargin) * i / sx + wmargin; })
         .y(function(d) { return 2*H - d / max_kevents_global * H * 2; });
       svg.append("path")

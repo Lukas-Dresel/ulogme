@@ -52,7 +52,7 @@ def updateEvents():
   L.extend(glob.glob("logs/notes_*.txt"))
 
   # extract all times. all log files of form {type}_{stamp}.txt
-  ts = [int(x[x.find('_')+1:x.find('.txt')]) for x in L]
+  ts = [int(x[x.rfind('_')+1:x.rfind('.txt')]) for x in L]
   ts = list(set(ts))
   ts.sort()
 

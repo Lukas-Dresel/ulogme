@@ -295,8 +295,20 @@
         .enter().append("g")
         .attr("class", "e")
         .on("mouseover", function(ev, d){return tooltip.style("visibility", "visible").text(d.s);})
-        .on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
-        .on("mouseout", function(){return tooltip.style("visibility", "hidden");})
+        .on("mousemove", function(ev)
+        {
+          var window_width = window.innerWidth;
+          var tooltip_width = tooltip.node().getBoundingClientRect().width;
+          var left = ev.pageX + 10;
+          if (ev.pageX > window_width/2) 
+          {
+            left = ev.pageX - 10 - tooltip_width;
+          }
+          return tooltip
+            .style("top", (event.pageY-10)+"px")
+            .style("left",(left)+"px");
+        })
+        .on("mouseout", function(ev) { return tooltip.style("visibility", "hidden"); })
         .on("click", function(ev, d){ 
           $("#notesinfo").show(); 
           $("#notesmsg").html("clicked event <b>" + d.s + "</b><br> Add note at time of this event:");
