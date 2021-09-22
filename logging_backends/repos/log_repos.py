@@ -7,12 +7,15 @@ import time
 from datetime import datetime
 
 ######################### CONFIG ##############################
-INTERVAL = 60
+INTERVAL = 9
 REPOS = {
-    'pwnrex-paper': "/home/honululu/lukas/research/pwnrex/paper/pwnrex-paper",
-    'pwnrex-paper-Lukas': "/home/honululu/lukas/research/pwnrex/paper/pwnrex-paper-Lukas-",
-    'automatic_pwny': "/home/honululu/lukas/research/pwnrex/automatic_pwny",
-    'automatic_pwny_samples': "/home/honululu/lukas/research/pwnrex/automatic_pwny_samples",
+    #'pwnrex-paper': "/home/honululu/lukas/research/pwnrex/paper/pwnrex-paper",
+    #'pwnrex-paper-Lukas': "/home/honululu/lukas/research/pwnrex/paper/pwnrex-paper-Lukas-",
+    #'automatic_pwny': "/home/honululu/lukas/research/pwnrex/automatic_pwny",
+    #'automatic_pwny_samples': "/home/honululu/lukas/research/pwnrex/automatic_pwny_samples",
+    'proposals': "/home/honululu/lukas/research/proposals",
+    'mctsse': "/home/honululu/lukas/research/mctsse",
+    'werkzeug': "/home/honululu/lukas/research/mctsse/werkzeug"
 }
 
 
@@ -61,6 +64,9 @@ for name, (repo_dir, track_dir) in REPOS.items():
         git(name, 'init')
         git(name, 'config', 'user.name', 'ulogm_repo_logging')
         git(name, 'config', 'user.email', '<>')
+        message = f'Initial tracking commit: {get_timestamp()}'
+        git(name, 'add', '-A')
+        git(name, 'commit', '-m', message)
 
 cur_start = int(time.time())
 while True:
@@ -83,8 +89,8 @@ while True:
         inserted, file_changed, deleted = 0, 0, 0
         if git(name, 'status', '--porcelain').strip():
             git(name, 'add', '-A')
-            output = git(name, 'commit', '-am', message)
-            
+            output = git(name, 'commit', '-m', message)
+            print(repr(output))
             for match in re.finditer(' ([0-9]+) (deletion|insertion|file[s]? changed)', output.decode()):
                 num, key = match.groups()
                 num = int(num)
