@@ -215,7 +215,7 @@
         var es = events[k]['keyfreq_events']; // window events for day k
         
         // get 7am time on this day
-        var d0 = new Date(es[0].t * 1000);
+        var d0 = new Date(events[k]['t0'] * 1000);
         d0.setHours(7);
         d0.setMinutes(0);
         d0.setSeconds(0);
@@ -260,7 +260,7 @@
         .attr("width", W)
         .attr("height", H*2);
       var line = d3.line()
-        .x(function(d,i) { return (W - 2*wmargin) * i / sx + wmargin; })
+        .x(function(d,i) { return (W - wmargin) * i / sx + wmargin; })
         .y(function(d) { return 2*H - d / max_kevents_global * H * 2; });
       svg.append("path")
         .datum(kevents_global)

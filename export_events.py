@@ -108,7 +108,7 @@ def updateEvents():
       if os.path.isfile(blog_path):
         blog = open(blog_path, 'r').read()
 
-      eout = {'window_events': e1, 'keyfreq_events': e2, 'mousefreq_events': e3, 'notes_events': e4, 'repo_events': e5, 'blog': blog}
+      eout = {'t0': t0, 'window_events': e1, 'keyfreq_events': e2, 'mousefreq_events': e3, 'notes_events': e4, 'repo_events': e5, 'blog': blog}
       with open(fwrite, 'w') as f:
           json.dump(eout, f)
       print('wrote ' + fwrite)
