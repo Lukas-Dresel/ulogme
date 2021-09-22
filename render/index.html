@@ -115,6 +115,7 @@
         d.text = d.val + ' (' + fn + '/s) ' + d.name;
       });
       stats = _.sortBy(stats, 'val').reverse();
+      stats = stats.slice(0, 7);
 
       // visualize as horizontal bars with d3
       var chart_data = {};
